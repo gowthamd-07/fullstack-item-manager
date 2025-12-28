@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ../backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DB_URL=postgres://user:password@db:5432/cruddb?sslmode=disable
+      - LOG_LEVEL=debug
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crud-net
+
+  frontend:
+    build:
+      context: ../frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - crud-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=cruddb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../go-crud-app/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d cruddb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crud-net
+
+volumes:
+  postgres_data:
+
+networks:
+  crud-net:
