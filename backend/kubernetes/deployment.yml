@@ -58,3 +58,4 @@ spec:
           securityContext:
             privileged: false
       terminationGracePeriodSeconds: 60
+      serviceAccountName: backend
