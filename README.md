@@ -25,6 +25,7 @@ A modern full-stack CRUD application for managing inventory items, deployed on K
 ## 📦 Tech Stack
 
 ### Backend
+
 - **Language**: Go 1.23
 - **Framework**: Chi Router
 - **Database**: PostgreSQL 15
@@ -32,12 +33,14 @@ A modern full-stack CRUD application for managing inventory items, deployed on K
 - **Features**: RESTful API, CORS support, graceful shutdown
 
 ### Frontend
+
 - **Framework**: React 19
 - **Build Tool**: Vite 7
 - **UI Library**: Lucide React (icons)
 - **Web Server**: Nginx (Alpine)
 
 ### Infrastructure
+
 - **Container Runtime**: Docker
 - **Orchestration**: Kubernetes (Kind)
 - **Database**: PostgreSQL (Helm Chart)
@@ -136,9 +139,11 @@ kubectl create namespace application
 ### 4. Deploy Backend
 
 ```bash
-# Apply backend manifests
-kubectl apply -f backend/kubernetes/deployment.yml
-kubectl apply -f backend/kubernetes/service.yml
+# Install backend chart
+helm install backend backend/backend -n application
+
+# Or upgrade if already installed
+helm upgrade backend backend/backend -n application
 
 # Check deployment status
 kubectl get pods -n application -l app=backend
@@ -148,9 +153,11 @@ kubectl get svc -n application
 ### 5. Deploy Frontend
 
 ```bash
-# Apply frontend manifests
-kubectl apply -f frontend/kubernetes/deployment.yml
-kubectl apply -f frontend/kubernetes/service.yml
+# Install frontend chart
+helm install frontend frontend/frontend -n application
+
+# Or upgrade if already installed
+helm upgrade frontend frontend/frontend -n application
 
 # Check deployment status
 kubectl get pods -n application -l app=frontend
@@ -219,10 +226,12 @@ npm run build
 ## 📡 API Endpoints
 
 ### Health Checks
+
 - `GET /health` - Liveness probe
 - `GET /health/ready` - Readiness probe
 
 ### Items API
+
 - `GET /api/items` - List all items
 - `GET /api/items/{id}` - Get item by ID
 - `POST /api/items` - Create new item
@@ -258,12 +267,14 @@ CREATE TABLE items (
 ### Migrations
 
 Migrations are located in `backend/migrations/`:
+
 - `000001_create_items_table.up.sql` - Create items table
 - `000001_create_items_table.down.sql` - Drop items table
 
 ## 🐳 Docker Images
 
 The application uses pre-built Docker images:
+
 - Backend: `gowthamd07101999/go-crud-app-app:docker-backend`
 - Frontend: `gowthamd07101999/go-crud-app-app:docker-frontend`
 
@@ -282,14 +293,16 @@ docker build -t gowthamd07101999/go-crud-app-app:docker-frontend .
 ## ☸️ Kubernetes Configuration
 
 ### Backend Deployment
+
 - **Replicas**: 2
-- **Resources**: 
+- **Resources**:
   - Requests: 100m CPU, 250Mi memory
   - Limits: 250m CPU, 500Mi memory
 - **Health Probes**: Liveness, Readiness, Startup
 - **Port**: 8000
 
 ### Frontend Deployment
+
 - **Replicas**: 2
 - **Resources**:
   - Requests: 100m CPU, 250Mi memory
@@ -298,6 +311,7 @@ docker build -t gowthamd07101999/go-crud-app-app:docker-frontend .
 - **Port**: 8080
 
 ### Services
+
 - Backend service exposes port 8000
 - Frontend service exposes port 8080
 
@@ -306,16 +320,19 @@ docker build -t gowthamd07101999/go-crud-app-app:docker-frontend .
 ### Environment Variables
 
 **Backend:**
+
 - `DB_URL` - PostgreSQL connection string
 - `PORT` - Server port (default: 8000)
 - `LOG_LEVEL` - Logging level (default: info)
 
 **Frontend:**
+
 - `VITE_API_URL` - Backend API URL (default: `/api`)
 
 ### Database Connection
 
 In Kubernetes, the backend connects to PostgreSQL using:
+
 ```
 postgres://admin:admin123@go-postgresql-hl.postgres.svc.cluster.local:5432/crud?sslmode=disable
 ```
@@ -396,9 +413,9 @@ psql -h localhost -U admin -d crud
 ### Remove Application
 
 ```bash
-# Delete application resources
-kubectl delete -f frontend/kubernetes/
-kubectl delete -f backend/kubernetes/
+# Uninstall Helm releases
+helm uninstall frontend -n application
+helm uninstall backend -n application
 kubectl delete namespace application
 ```
 
@@ -488,4 +505,3 @@ kubectl exec -n application <frontend-pod> -- wget -O- http://backend:8000/healt
 **Project**: Item Manager  
 **Stack**: Go + React + PostgreSQL + Kubernetes  
 **Deployment**: Kind (Kubernetes in Docker)
-

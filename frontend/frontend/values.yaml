@@ -1,0 +1,54 @@
+namespace: application
+replicaCount: 2
+image:
+  repository: gowthamd07101999/go-crud-app-app
+  tag: docker-frontend
+  pullPolicy: Always
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+selectorLabels:
+  app: frontend
+service:
+  port: 8080
+  type: ClusterIP
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+securityContext:
+  privileged: false
+terminationGracePeriodSeconds: 60
+serviceAccountName: frontend
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+serviceAccount:
+  annotations: {}
+  create: true
