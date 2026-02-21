@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -9,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrItemNotFound = errors.New("item not found")
 
 type ItemRepository struct {
 	db *pgxpool.Pool
@@ -49,7 +52,7 @@ func (r *ItemRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ite
 	err := row.Scan(&i.ID, &i.Name, &i.Price, &i.CreatedAt, &i.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("item not found")
+			return nil, ErrItemNotFound
 		}
 		return nil, fmt.Errorf("failed to get item: %w", err)
 	}
@@ -57,16 +60,23 @@ func (r *ItemRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Ite
 	return &i, nil
 }
 
-func (r *ItemRepository) GetAll(ctx context.Context) ([]models.Item, error) {
+func (r *ItemRepository) GetAll(ctx context.Context, limit, offset int) ([]models.Item, int, error) {
+	countQuery := `SELECT COUNT(*) FROM items`
+	var total int
+	if err := r.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count items: %w", err)
+	}
+
 	query := `
 		SELECT id, name, price, created_at, updated_at
 		FROM items
 		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list items: %w", err)
+		return nil, 0, fmt.Errorf("failed to list items: %w", err)
 	}
 	defer rows.Close()
 
@@ -74,12 +84,12 @@ func (r *ItemRepository) GetAll(ctx context.Context) ([]models.Item, error) {
 	for rows.Next() {
 		var i models.Item
 		if err := rows.Scan(&i.ID, &i.Name, &i.Price, &i.CreatedAt, &i.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("failed to scan item: %w", err)
+			return nil, 0, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, i)
 	}
 
-	return items, nil
+	return items, total, nil
 }
 
 func (r *ItemRepository) Update(ctx context.Context, id uuid.UUID, updates *models.UpdateItemDTO) (*models.Item, error) {
@@ -108,7 +118,7 @@ func (r *ItemRepository) Update(ctx context.Context, id uuid.UUID, updates *mode
 	err := row.Scan(&i.ID, &i.Name, &i.Price, &i.CreatedAt, &i.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("item not found")
+			return nil, ErrItemNotFound
 		}
 		return nil, fmt.Errorf("failed to update item: %w", err)
 	}
@@ -123,7 +133,7 @@ func (r *ItemRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
 	if commandTag.RowsAffected() == 0 {
-		return fmt.Errorf("item not found")
+		return ErrItemNotFound
 	}
 	return nil
 }

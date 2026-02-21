@@ -29,6 +29,9 @@ RUN apk add --no-cache ca-certificates
 # Copy binary from builder
 COPY --from=builder /app/main .
 
+# Copy migrations for init container usage
+COPY --from=builder /app/migrations ./migrations
+
 # Expose port
 EXPOSE 8000
 

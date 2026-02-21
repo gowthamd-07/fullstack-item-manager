@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: gowthamd07101999/go-crud-app-app
   tag: docker-backend
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 env:
   - name: DB_URL
     valueFrom:
@@ -15,6 +15,8 @@ env:
       secretKeyRef:
         name: backend
         key: log_level
+  - name: ALLOWED_ORIGINS
+    value: "http://frontend.application.svc.cluster.local:8080"
 strategy:
   type: RollingUpdate
   rollingUpdate:
@@ -24,9 +26,10 @@ selectorLabels:
   app: backend
 service:
   port: 8000
+  type: ClusterIP
 readinessProbe:
   httpGet:
-    path: /health
+    path: /health/ready
     port: 8000
   initialDelaySeconds: 5
   periodSeconds: 10
@@ -42,6 +45,7 @@ startupProbe:
     port: 8000
   initialDelaySeconds: 5
   periodSeconds: 10
+  failureThreshold: 30
 resources:
   requests:
     cpu: "100m"
@@ -51,6 +55,9 @@ resources:
     memory: "512Mi"
 securityContext:
   privileged: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
 terminationGracePeriodSeconds: 60
 serviceAccountName: backend
 autoscaling:
@@ -62,6 +69,8 @@ autoscaling:
 secrets:
   type: Opaque
   data:
+    # IMPORTANT: Replace these with real secrets before deploying.
+    # Generate with: echo -n 'your-connection-string' | base64
     db_url: cG9zdGdyZXM6Ly9hZG1pbjphZG1pbjEyM0Bnby1wb3N0Z3Jlc3FsLWhsLnBvc3RncmVzLnN2Yy5jbHVzdGVyLmxvY2FsOjU0MzIvY3J1ZD9zc2xtb2RlPWRpc2FibGU=
     log_level: ZGVidWc=
 serviceAccount:

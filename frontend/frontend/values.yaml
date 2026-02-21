@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: gowthamd07101999/go-crud-app-app
   tag: docker-frontend
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 strategy:
   type: RollingUpdate
   rollingUpdate:
@@ -32,8 +32,10 @@ startupProbe:
     port: 8080
   initialDelaySeconds: 5
   periodSeconds: 10
+  failureThreshold: 30
 securityContext:
   privileged: false
+  allowPrivilegeEscalation: false
 terminationGracePeriodSeconds: 60
 serviceAccountName: frontend
 autoscaling:

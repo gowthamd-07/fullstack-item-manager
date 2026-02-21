@@ -2,24 +2,34 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port     string
-	DBUrl    string
-	LogLevel string
+	Port           string
+	DBUrl          string
+	LogLevel       string
+	AllowedOrigins []string
 }
 
 func LoadConfig() (*Config, error) {
-	// Load .env file if it exists, but don't fail if it doesn't (k8s/docker might inject env vars directly)
 	_ = godotenv.Load()
 
+	origins := getEnv("ALLOWED_ORIGINS", "http://localhost:8080")
+	var parsedOrigins []string
+	for _, o := range strings.Split(origins, ",") {
+		if trimmed := strings.TrimSpace(o); trimmed != "" {
+			parsedOrigins = append(parsedOrigins, trimmed)
+		}
+	}
+
 	cfg := &Config{
-		Port:     getEnv("PORT", "8000"),
-		DBUrl:    getEnv("DB_URL", "postgres://user:password@localhost:5432/dbname?sslmode=disable"),
-		LogLevel: getEnv("LOG_LEVEL", "info"),
+		Port:           getEnv("PORT", "8000"),
+		DBUrl:          getEnv("DB_URL", ""),
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		AllowedOrigins: parsedOrigins,
 	}
 
 	return cfg, nil
